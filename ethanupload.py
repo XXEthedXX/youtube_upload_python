@@ -66,9 +66,20 @@ def lets_get_authenticated(theArg):
 
     # Create a representation of the client and perform a request to make a URI
     my_client = DeviceClient(client_id)
-    request_body = my_client.prepare_request_body(scope=[YOUTUBE_UPLOAD_SCOPE])
 
-    return request_body
+    # get device authorization url and verification code
+    my_resp = my_client.initiate_device_flow(scopes=[YOUTUBE_UPLOAD_SCOPE])
+    print(f"Go to the following link in your browser: {my_resp['verification_url']}")
+    print(f"Enter verification code: {my_resp['user_code']}")
+
+    # grab access token
+    access_coin = my_client.acquire_token(my_resp['device_code'])
+
+    # build youtube API using this access token
+    credentials = google.oauth2.credentials.Credentials(access_token['access_token'])
+    youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials)
+
+    return youtube
 
 # create a function to begin_upload
 def begin_upload(youtube, options):
@@ -120,7 +131,7 @@ if __name__ == '__main__':
     parser.add_argument("--file", required=True, help="Video file to upload")
     parser.add_argument("--title", help="Video title", default="Test Title")
     parser.add_argument("--description", help="Video description",
-                           default="Test Description")
+                        default="Test Description")
     parser.add_argument("--category", default="22", help="Numeric video category. " + "See https://developers.google.com/youtube/v3/docs/videoCategories/list")
     parser.add_argument("--keywords", help="Video keywords, comma separated", default="")
     parser.add_argument("--privacyStatus", choices=POSSIBLE_PRIVACY_STATUSES[0], default=POSSIBLE_PRIVACY_STATUSES[0], help="Video privacy status.")
